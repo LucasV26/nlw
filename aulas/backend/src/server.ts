@@ -1,40 +1,26 @@
 import express from 'express';
-import { getRepository } from 'typeorm';
+import path from 'path';
+import cors from 'cors';
+import 'express-async-errors';
 
-import Orphanage from './models/Orphanage';
 import './database/connection';
+import routes from './routes'; 
+import errorHandler from './errors/handler';
 
 const app = express();
 
+app.use(cors()); // Cors faz com que nossa aplicação consiga responder requests de outros domínios
+// O front end está em localhost:3000 e o servidor em localhost:3333
+
 app.use(express.json()); // Ativando a funcionalidade do express com Body Params em JSON
 
-app.post('/orphanages', async (request, response) => {
-    const {
-        name,
-        latitude,
-        longitude,
-        about,
-        instructions,
-        opening_hours,
-        open_on_weekends
-    } = request.body;
+app.use(routes); // Todo o código de exemplo abaixo está abstraído em ./routes
 
-    const orphanagesRepository = getRepository(Orphanage);
+// A funcionalidade static do express permite acessarmos os arquivos de imagem na url
+// (Estas url's são retornadas do banco e podem ser vistas na view de imagens)
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-    const orphanage = orphanagesRepository.create({
-        name,
-        latitude,
-        longitude,
-        about,
-        instructions,
-        opening_hours,
-        open_on_weekends
-    });
-
-    await orphanagesRepository.save(orphanage);
-
-    return response.json({ message: "Deu" });
-})
+app.use(errorHandler); // Utilizando um error handler para melhorar a mensagem enviada ao usuário
 
 app.listen(3333);
 
